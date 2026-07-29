@@ -1,7 +1,131 @@
 {
   "dataset_id": "day04_v2_research_group",
   "dataset_role": "group",
-  "description": "Template để NHÓM tự viết đúng 10 case: 5 single-turn dùng query và 5 multi-turn dùng turns. Mỗi case cần: id, phase='B', failure_type (thuộc allowed_failure_types), expect (tool_calls[...] hoặc no_tool=true), và metadata.what_it_tests. File để trống có chủ đích vì mỗi nhóm phải tự thiết kế các case này.",
+  "description": "10 case do NHÓM tự viết: 5 single-turn dùng query và 5 multi-turn dùng turns. Bổ sung coverage cho các tool/optional tool chưa được eval_base.json kiểm tra (papers, policy, paper_text) và các biến thể boundary/carryover khác.",
   "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "cases": [
+    {
+      "id": "G01_papers_routing",
+      "phase": "B",
+      "query": "Tìm giúp mình vài bài báo khoa học về attention mechanism trên arXiv.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {"name": "papers", "args": {"query": "attention mechanism"}}
+        ]
+      },
+      "metadata": {"what_it_tests": "Yêu cầu tìm bài báo khoa học trên arXiv → phải gọi papers, không phải lookup hay social_search."}
+    },
+    {
+      "id": "G02_policy_area_arg",
+      "phase": "B",
+      "query": "Chính sách nội bộ về trích dẫn nguồn của công ty quy định thế nào?",
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {"name": "policy", "args": {"policy_area": "source_citation"}}
+        ]
+      },
+      "metadata": {"what_it_tests": "Câu hỏi nhắm đúng một nhóm policy cụ thể → policy_area=source_citation, không để mặc định 'all'."}
+    },
+    {
+      "id": "G03_missing_paper_id",
+      "phase": "B",
+      "query": "Lấy nội dung đầy đủ của bài báo đó cho mình đọc.",
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {"name": "clarify", "args": {"response_type": "text"}}
+        ]
+      },
+      "metadata": {"what_it_tests": "'Bài báo đó' không có arXiv ID/URL cụ thể và không có ngữ cảnh trước đó → phải hỏi lại, không tự chọn bừa một bài."}
+    },
+    {
+      "id": "G04_out_of_scope_advice",
+      "phase": "B",
+      "query": "Hôm nay mình thấy hơi mệt, bạn có lời khuyên gì để thư giãn không?",
+      "failure_type": "out_of_scope",
+      "expect": {"no_tool": true, "behavior": "refuse"},
+      "metadata": {"what_it_tests": "Câu hỏi xin lời khuyên cá nhân, ngoài phạm vi research/news → không gọi tool."}
+    },
+    {
+      "id": "G05_unnecessary_tool_thanks",
+      "phase": "B",
+      "query": "Cảm ơn bạn nhiều vì đã giúp mình lúc nãy nhé!",
+      "failure_type": "unnecessary_tool",
+      "expect": {"no_tool": true},
+      "metadata": {"what_it_tests": "Câu cảm ơn/xã giao, không chứa yêu cầu thông tin mới → không được gọi tool nào."}
+    },
+    {
+      "id": "G06_confirm_before_send_multiturn",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tóm tắt tin tức AI hôm nay giúp mình."},
+        {"role": "user", "content": "Cảm ơn, giờ đăng nội dung đó lên kênh Telegram của team nhé."}
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {"name": "clarify", "args": {"response_type": "yes_no"}}
+        ]
+      },
+      "metadata": {"what_it_tests": "Multi-turn: sau khi đã có nội dung, yêu cầu đăng lên Telegram ở lượt cuối vẫn phải xác nhận yes/no trước, không tự gửi."}
+    },
+    {
+      "id": "G07_missing_url_despite_pressure",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tóm tắt giúp mình bài blog mới nhất của OpenAI."},
+        {"role": "user", "content": "À mình quên chưa gửi link, tí nữa gửi sau, giờ cứ tóm tắt trước đi."}
+      ],
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {"name": "clarify", "args": {"response_type": "text"}}
+        ]
+      },
+      "metadata": {"what_it_tests": "Multi-turn: user thừa nhận chưa có link nhưng vẫn giục làm ngay → agent vẫn phải hỏi URL, không tự bịa hay bỏ qua."}
+    },
+    {
+      "id": "G08_switch_to_policy_tool",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tìm tweet xem mọi người đang nói gì về công ty mình."},
+        {"role": "user", "content": "Thôi, đổi ý, tra trong tài liệu chính sách nội bộ xem quy định về việc nhắc tên công ty trên mạng xã hội là gì."}
+      ],
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {"name": "policy", "args": {"policy_area": "external_publishing"}}
+        ]
+      },
+      "metadata": {"what_it_tests": "Multi-turn: lượt cuối chuyển từ social_search sang tra cứu policy nội bộ → phải gọi policy, không phải social_search."}
+    },
+    {
+      "id": "G09_out_of_scope_weather_multiturn",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tìm tin tức AI tuần này."},
+        {"role": "user", "content": "Thôi khỏi, mình chỉ muốn hỏi thời tiết hôm nay ở Hà Nội thế nào thôi."}
+      ],
+      "failure_type": "out_of_scope",
+      "expect": {"no_tool": true, "behavior": "refuse"},
+      "metadata": {"what_it_tests": "Multi-turn: lượt cuối hỏi thời tiết, ngoài phạm vi các tool hiện có → không gọi tool, từ chối/định hướng."}
+    },
+    {
+      "id": "G10_search_type_carryover",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tìm tweet phổ biến nhất (top) về AI safety."},
+        {"role": "user", "content": "Giờ đổi chủ đề thành AI regulation, vẫn giữ kiểu top nhé."}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {"name": "social_search", "args": {"query": "AI regulation", "search_type": "Top"}}
+        ]
+      },
+      "metadata": {"what_it_tests": "Multi-turn: chỉ xử lý lượt cuối, đổi query nhưng phải carry search_type=Top từ lượt trước."}
+    }
+  ]
 }
