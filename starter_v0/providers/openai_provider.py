@@ -31,7 +31,8 @@ class OpenAIProvider:
         tool_choice: Any | None = None,
     ) -> ModelResponse:
         try:
-            from openai import OpenAI
+            import httpx
+            from openai import APIConnectionError, APITimeoutError, OpenAI
         except ImportError as exc:
             raise RuntimeError("Install live provider dependency first: pip install openai") from exc
 
@@ -39,7 +40,15 @@ class OpenAIProvider:
         if not api_key:
             raise RuntimeError(f"Missing API key env var: {self.api_key_env}")
 
-        client = OpenAI(api_key=api_key, base_url=self.base_url)
+        # Use explicit connection/read limits so the web UI does not hang forever
+        # on a blocked socket. The SDK retries transient connection failures.
+        timeout = httpx.Timeout(connect=15.0, read=60.0, write=30.0, pool=15.0)
+        client = OpenAI(
+            api_key=api_key,
+            base_url=self.base_url,
+            timeout=timeout,
+            max_retries=2,
+        )
         kwargs: dict[str, Any] = {
             "model": model or self.default_model,
             "messages": messages,
@@ -50,7 +59,16 @@ class OpenAIProvider:
         if tool_choice is not None:
             kwargs["tool_choice"] = tool_choice
 
-        resp = client.chat.completions.create(**kwargs)
+        try:
+            resp = client.chat.completions.create(**kwargs)
+        except (APIConnectionError, APITimeoutError) as exc:
+            endpoint = self.base_url or "https://api.openai.com/v1"
+            root_cause = exc.__cause__
+            detail = f" ({type(root_cause).__name__}: {root_cause})" if root_cause else ""
+            raise RuntimeError(
+                f"Không kết nối được tới {endpoint}{detail}. "
+                "Kiểm tra mạng/firewall, rồi thử lại; API key không được ghi vào log."
+            ) from exc
         msg = resp.choices[0].message
         calls: list[ToolCall] = []
         for call in msg.tool_calls or []:

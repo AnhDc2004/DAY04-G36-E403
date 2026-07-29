@@ -1,0 +1,50 @@
+{
+  "transcript_id": "v1_openrouter_20260729T155109147173",
+  "version": "v1",
+  "artifact_version": "v1+peb1c8179815b+t6cdb53d5d7b8",
+  "prompt_hash": "eb1c8179815bd79d34de7d326420bb99b3072e6e8ae96464c02d4411f905fc68",
+  "tools_hash": "6cdb53d5d7b8de80d60b298b1357f462cedbedfae261d5ba60b08ccc401687c5",
+  "provider": "openrouter",
+  "model": "openai/gpt-4o-mini",
+  "system_prompt": "D:\\AI_thuc_chien\\DAY04-G36-E403\\starter_v0\\artifacts\\system_prompt.md",
+  "tools": "D:\\AI_thuc_chien\\DAY04-G36-E403\\starter_v0\\artifacts\\tools.yaml",
+  "history_window": 5,
+  "max_tool_rounds": 4,
+  "created_at": "2026-07-29T15:51:09",
+  "updated_at": "2026-07-29T15:52:41",
+  "turns": [
+    {
+      "turn_index": 1,
+      "started_at": "2026-07-29T15:51:09",
+      "user": "helo",
+      "status": "provider_error",
+      "assistant_text": "Không thể hoàn tất yêu cầu do lỗi provider.",
+      "rounds": [],
+      "tool_events": [],
+      "error": "APIConnectionError: Connection error.",
+      "ended_at": "2026-07-29T15:51:11"
+    },
+    {
+      "turn_index": 2,
+      "started_at": "2026-07-29T15:52:27",
+      "user": "hi",
+      "status": "provider_error",
+      "assistant_text": "Không thể hoàn tất yêu cầu do lỗi provider.",
+      "rounds": [],
+      "tool_events": [],
+      "error": "APIConnectionError: Connection error.",
+      "ended_at": "2026-07-29T15:52:28"
+    },
+    {
+      "turn_index": 3,
+      "started_at": "2026-07-29T15:52:40",
+      "user": "h",
+      "status": "provider_error",
+      "assistant_text": "Không thể hoàn tất yêu cầu do lỗi provider.",
+      "rounds": [],
+      "tool_events": [],
+      "error": "APIConnectionError: Connection error.",
+      "ended_at": "2026-07-29T15:52:41"
+    }
+  ]
+}
