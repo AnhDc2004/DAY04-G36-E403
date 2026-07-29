@@ -1,1 +1,3 @@
 version,author,changed_artifact,artifact_version,prompt_hash,tools_hash,reason,hypothesis,metric_name,metric_before,metric_after,run_file
+v0,anhkhji,system_prompt,v0+pd6c7089ac902+t011c271ef0bb,pd6c7089ac902,t011c271ef0bb,"Khắc phục lỗi trích xuất tham số truy vấn, đồng bộ tham số khi tìm kiếm song song và ngăn ngừa kích hoạt tool ngoài phạm vi","Ràng buộc chặt chẽ cách trích xuất tham số query và quy định rõ ranh giới xử lý out-of-scope trong System Prompt sẽ giúp AI chọn đúng tool và trích xuất tham số chính xác hơn",case_accuracy,0.75,0.85,v0_B_base_openrouter_20260729T154112973912.json
+

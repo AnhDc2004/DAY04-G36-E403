@@ -1,0 +1,3 @@
+v0_B_base_openrouter_20260729T150346904142,v0,v0+pf0c107a9d7a1+t011c271ef0bb,base,R03_web_news_routing,False,wrong_tool,wrong_arg_value,lookup,lookup,False,True,False,"query: expected 'AI', got 'AI news'"
+
+kiểm tra hai list log xem có sự thay đổi gì không
