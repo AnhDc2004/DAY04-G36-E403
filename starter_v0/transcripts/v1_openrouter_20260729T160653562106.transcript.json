@@ -1,0 +1,34 @@
+{
+  "transcript_id": "v1_openrouter_20260729T160653562106",
+  "version": "v1",
+  "artifact_version": "v1+p89887d925eea+t6cdb53d5d7b8",
+  "prompt_hash": "89887d925eeaf701e29e361d21642dff514acd05d7b7b480bb2e98ec00e9ca58",
+  "tools_hash": "6cdb53d5d7b8de80d60b298b1357f462cedbedfae261d5ba60b08ccc401687c5",
+  "provider": "openrouter",
+  "model": "openai/gpt-4o-mini",
+  "system_prompt": "D:\\AI_thuc_chien\\DAY04-G36-E403\\starter_v0\\artifacts\\system_prompt.md",
+  "tools": "D:\\AI_thuc_chien\\DAY04-G36-E403\\starter_v0\\artifacts\\tools.yaml",
+  "history_window": 5,
+  "max_tool_rounds": 4,
+  "created_at": "2026-07-29T16:06:53",
+  "updated_at": "2026-07-29T16:06:55",
+  "turns": [
+    {
+      "turn_index": 1,
+      "started_at": "2026-07-29T16:06:53",
+      "user": "hi",
+      "status": "answered",
+      "assistant_text": "Hello! How can I assist you today?",
+      "rounds": [
+        {
+          "round": 1,
+          "assistant_text": "Hello! How can I assist you today?",
+          "tool_calls": [],
+          "tool_results": []
+        }
+      ],
+      "tool_events": [],
+      "ended_at": "2026-07-29T16:06:55"
+    }
+  ]
+}

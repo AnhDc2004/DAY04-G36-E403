@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -31,7 +33,7 @@ load_lab_env(ROOT)
 
 st.set_page_config(
     page_title="Research Agent Lab",
-    page_icon="◈",
+    page_icon="🔎",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -40,18 +42,18 @@ st.markdown(
     """
     <style>
       :root {
-        --ink: #17211b;
-        --muted: #66736a;
-        --paper: #f5f2e9;
-        --card: #fffdf8;
-        --green: #1d5b45;
-        --lime: #cfe56b;
-        --orange: #ee7e45;
+        --ink: #0f172a;
+        --muted: #64748b;
+        --paper: #f6f9ff;
+        --card: #ffffff;
+        --blue: #2563eb;
+        --blue-dark: #1e40af;
+        --blue-soft: #dbeafe;
+        --border: #e2e8f0;
       }
       .stApp {
-        background:
-          radial-gradient(circle at 85% 3%, rgba(207,229,107,.20), transparent 24rem),
-          linear-gradient(180deg, #f8f5ed 0%, #f1eee5 100%);
+        background: radial-gradient(circle at 90% 0%, #dbeafe 0, transparent 26rem),
+                    linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
         color: var(--ink);
       }
       .stApp, .stApp p, .stApp label, .stApp li,
@@ -59,8 +61,8 @@ st.markdown(
         color: var(--ink);
       }
       [data-testid="stSidebar"] {
-        background: #173f32;
-        border-right: 1px solid rgba(255,255,255,.08);
+        background: linear-gradient(180deg, #0f2f78, #123d97);
+        border-right: 1px solid rgba(255,255,255,.12);
       }
       [data-testid="stSidebar"] h1,
       [data-testid="stSidebar"] h2,
@@ -89,19 +91,19 @@ st.markdown(
         color: #17211b !important;
       }
       [data-testid="stSidebar"] code {
-        background: #102f26;
-        color: #eef5d6 !important;
+        background: #0b245f;
+        color: #dbeafe !important;
       }
       .hero {
-        border: 1px solid rgba(29,91,69,.14);
-        border-radius: 22px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
         padding: 24px 28px;
         margin: 4px 0 22px;
-        background: rgba(255,253,248,.84);
-        box-shadow: 0 16px 45px rgba(23,33,27,.07);
+        background: rgba(255,255,255,.92);
+        box-shadow: 0 12px 32px rgba(37,99,235,.08);
       }
       .eyebrow {
-        color: var(--orange);
+        color: var(--blue);
         font-size: .76rem;
         font-weight: 800;
         letter-spacing: .14em;
@@ -109,10 +111,10 @@ st.markdown(
       }
       .hero h1 {
         color: var(--ink);
-        font-family: Georgia, serif;
-        font-size: clamp(2rem, 4vw, 3.65rem);
-        line-height: .98;
-        letter-spacing: -.045em;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        font-size: clamp(1.85rem, 3vw, 3rem);
+        line-height: 1.08;
+        letter-spacing: -.035em;
         margin: 8px 0 12px;
       }
       .hero p { color: var(--muted); max-width: 720px; margin: 0; }
@@ -120,34 +122,35 @@ st.markdown(
         display: inline-block;
         margin-top: 14px;
         padding: 6px 10px;
-        background: #eaf0db;
-        color: #294838;
+        background: var(--blue-soft);
+        color: var(--blue-dark);
         border-radius: 999px;
         font: 700 .75rem ui-monospace, monospace;
       }
       [data-testid="stChatMessage"] {
-        background: rgba(255,253,248,.82);
-        border: 1px solid rgba(29,91,69,.10);
+        background: rgba(255,255,255,.92);
+        border: 1px solid var(--border);
         border-radius: 16px;
         padding: 8px 12px;
-        box-shadow: 0 8px 25px rgba(23,33,27,.04);
+        box-shadow: 0 6px 20px rgba(15,23,42,.05);
       }
       [data-testid="stChatMessage"] p,
       [data-testid="stChatMessage"] li {
         color: #17211b !important;
       }
       [data-testid="stMetric"] {
-        background: rgba(255,253,248,.72);
-        border: 1px solid rgba(29,91,69,.12);
-        padding: 12px 14px;
-        border-radius: 14px;
+        background: #fff;
+        border: 1px solid var(--border);
+        padding: 14px 16px;
+        border-radius: 16px;
+        box-shadow: 0 6px 20px rgba(15,23,42,.04);
       }
       [data-testid="stMetricLabel"] *,
       [data-testid="stMetricValue"] {
         color: #17211b !important;
       }
       .trace-title {
-        color: var(--green);
+        color: var(--blue-dark);
         font-weight: 800;
         letter-spacing: .02em;
       }
@@ -156,15 +159,34 @@ st.markdown(
         padding: 3px 8px;
         margin-right: 5px;
         border-radius: 999px;
-        background: #173f32;
-        color: #fffdf8;
+        background: var(--blue);
+        color: #fff;
         font-size: .75rem;
       }
       .status-ok { color: #267051; font-weight: 800; }
       .status-wait { color: #a4532b; font-weight: 800; }
       .stButton > button {
-        border-radius: 999px;
-        border: 1px solid rgba(255,255,255,.22);
+        border-radius: 10px;
+        border: 1px solid #60a5fa;
+        background: var(--blue);
+        color: white;
+        font-weight: 700;
+      }
+      .stButton > button:hover {
+        background: var(--blue-dark);
+        color: white;
+        border-color: var(--blue-dark);
+      }
+      [data-testid="stDataFrame"], [data-testid="stExpander"] {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 5px 18px rgba(15,23,42,.04);
+      }
+      @media (max-width: 768px) {
+        .hero { padding: 20px; border-radius: 16px; }
+        .hero h1 { font-size: 1.75rem; }
+        [data-testid="stHorizontalBlock"] { gap: .65rem; }
       }
     </style>
     """,
@@ -221,6 +243,43 @@ def configured_providers() -> list[str]:
     ]
 
 
+SENSITIVE_KEYS = re.compile(
+    r"(api[_-]?key|authorization|token|secret|password|cookie|credential)",
+    re.IGNORECASE,
+)
+BEARER_PATTERN = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]+")
+KEY_PATTERN = re.compile(
+    r"\b(?:sk|pk|key|token)-[A-Za-z0-9_-]{8,}\b", re.IGNORECASE
+)
+EMAIL_PATTERN = re.compile(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b")
+
+
+def redact_sensitive(value: Any) -> Any:
+    """Return a display-safe copy without mutating the evidence stored on disk."""
+    if isinstance(value, dict):
+        return {
+            key: ("••••••••" if SENSITIVE_KEYS.search(str(key)) else redact_sensitive(item))
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [redact_sensitive(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(redact_sensitive(item) for item in value)
+    if isinstance(value, str):
+        text = BEARER_PATTERN.sub("Bearer ••••••••", value)
+        text = KEY_PATTERN.sub("••••••••", text)
+        if st.session_state.get("hide_personal_data", True):
+            text = EMAIL_PATTERN.sub("•••@•••", text)
+        return text
+    return value
+
+
+def safe_json_bytes(value: Any) -> bytes:
+    return json.dumps(
+        redact_sensitive(value), ensure_ascii=False, indent=2
+    ).encode("utf-8")
+
+
 def friendly_provider_error(exc: Exception, provider_name: str) -> str:
     message = str(exc)
     if "Missing API key env var" in message:
@@ -261,7 +320,7 @@ def show_trace(turn: dict[str, Any]) -> None:
                 left, right = st.columns(2)
                 with left:
                     st.caption("Arguments")
-                    st.json(call.get("args", {}), expanded=True)
+                    st.json(redact_sensitive(call.get("args", {})), expanded=True)
                 event = next(
                     (
                         item
@@ -272,15 +331,34 @@ def show_trace(turn: dict[str, Any]) -> None:
                 )
                 with right:
                     st.caption("Result / error")
-                    st.json(event.get("result", {}), expanded=True)
+                    st.json(redact_sensitive(event.get("result", {})), expanded=True)
             if round_data.get("assistant_text"):
                 st.caption("Assistant note")
                 st.write(round_data["assistant_text"])
 
 
 with st.sidebar:
-    st.markdown("## ◈ Control desk")
-    st.caption("Cấu hình phiên chạy và bằng chứng artifact")
+    st.markdown("## 🔎 Research Agent")
+    st.caption("Trung tâm điều khiển và giám sát")
+    page = st.radio(
+        "Menu",
+        ["💬 Trò chuyện", "📊 Tổng quan", "🧭 Tool traces"],
+        label_visibility="collapsed",
+    )
+    st.markdown("---")
+    st.markdown("### Bộ lọc & bảo mật")
+    status_filter = st.selectbox(
+        "Trạng thái trace",
+        ["Tất cả", "completed", "provider_error", "max_tool_rounds"],
+    )
+    st.session_state.hide_personal_data = st.toggle(
+        "Ẩn email và dữ liệu cá nhân",
+        value=st.session_state.get("hide_personal_data", True),
+        help="API key, token, secret và mật khẩu luôn được che.",
+    )
+    st.caption("🔒 Secrets luôn được ẩn trên giao diện và file tải xuống.")
+    st.markdown("---")
+    st.markdown("### Cấu hình phiên")
     provider_options = configured_providers()
     if not provider_options:
         st.error("Chưa tìm thấy API key hợp lệ trong .env.")
@@ -310,8 +388,8 @@ with st.sidebar:
         st.code(path.name, language=None)
         if path.exists():
             st.download_button(
-                "Tải transcript JSON",
-                data=path.read_bytes(),
+                "Tải transcript đã ẩn dữ liệu",
+                data=safe_json_bytes(st.session_state.transcript),
                 file_name=path.name,
                 mime="application/json",
                 use_container_width=True,
@@ -320,10 +398,10 @@ with st.sidebar:
 st.markdown(
     f"""
     <section class="hero">
-      <div class="eyebrow">Day 04 · Evidence-driven agent</div>
-      <h1>Research, with<br>the trace left on.</h1>
-      <p>Đặt câu hỏi, quan sát agent chọn tool và kiểm tra từng argument,
-      kết quả hoặc lỗi qua mỗi round.</p>
+      <div class="eyebrow">AI Research Workspace</div>
+      <h1>Research Agent<br>Control Center</h1>
+      <p>Nghiên cứu, theo dõi công cụ và đánh giá hiệu suất trong một
+      không gian làm việc bảo mật, rõ ràng và chuyên nghiệp.</p>
       <span class="artifact-pill">{current_artifact.artifact_version}</span>
     </section>
     """,
@@ -342,6 +420,55 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "turns" not in st.session_state:
     st.session_state.turns = []
+
+if page == "📊 Tổng quan":
+    st.subheader("Phân tích hoạt động")
+    tool_names = [
+        event.get("tool", "unknown")
+        for turn in turns
+        for event in turn.get("tool_events", [])
+    ]
+    tool_rows = [
+        {"Công cụ": name, "Số lần gọi": count}
+        for name, count in Counter(tool_names).most_common()
+    ]
+    left, right = st.columns([1.15, 1])
+    with left:
+        st.markdown("#### Lượt gọi theo công cụ")
+        if tool_rows:
+            st.bar_chart(tool_rows, x="Công cụ", y="Số lần gọi", color="#2563eb")
+        else:
+            st.info("Chưa có dữ liệu. Hãy bắt đầu một cuộc trò chuyện.")
+    with right:
+        st.markdown("#### Dữ liệu phiên gần đây")
+        summary_rows = [
+            {
+                "Lượt": turn.get("turn_index"),
+                "Trạng thái": turn.get("status"),
+                "Rounds": len(turn.get("rounds", [])),
+                "Tool events": len(turn.get("tool_events", [])),
+            }
+            for turn in turns[-10:]
+        ]
+        if summary_rows:
+            st.dataframe(summary_rows, use_container_width=True, hide_index=True)
+        else:
+            st.info("Bảng sẽ xuất hiện khi có lượt chạy đầu tiên.")
+    st.stop()
+
+if page == "🧭 Tool traces":
+    st.subheader("Nhật ký công cụ")
+    visible_turns = [
+        turn
+        for turn in reversed(turns)
+        if status_filter == "Tất cả" or turn.get("status") == status_filter
+    ]
+    if not visible_turns:
+        st.info("Không có trace phù hợp với bộ lọc.")
+    for turn in visible_turns:
+        st.markdown(f"#### Lượt {turn.get('turn_index', '?')}")
+        show_trace(turn)
+    st.stop()
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
